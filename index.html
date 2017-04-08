@@ -1,0 +1,222 @@
+<!doctype html>
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>Workout Tracker</title>
+		<style>
+* {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+}
+
+body {
+}
+
+button {
+	cursor: pointer;
+}
+.workout button {
+	display: block;
+	width: 100%;
+	text-align: center;
+}
+.add-workout button {
+	padding: 0.5em 1em;
+}
+
+.workouts {
+	border-spacing: 0;
+	width: 100%;
+}
+
+.workout:nth-child(even) {
+	background-color: #eee;
+}
+
+.workout td {
+	_border: 1px solid #888;
+	_border-width: 0 1px 1px 0;
+	_padding: 0.125em 0.5em;
+	padding: 0;
+}
+.workout td:last-child {
+	_border-right-width: 0;
+}
+.add-workout td {
+	padding-top: 1em;
+}
+
+.status {
+	width: 10%;
+	text-align: center;
+}
+
+.workout input {
+	background-color: transparent;
+	border-width: 0;
+	display: block;
+	line-height: 1.5;
+	padding: 0.5em;
+	text-align: left;
+	width: 100%;
+}
+
+.col {
+	position: relative;
+	
+	width: 9%;
+}
+
+.col button {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	
+	display: block;
+}
+
+.workout:first-child .remove {
+	display: none;
+}
+		</style>
+	</head>
+	<body>
+		<table class="workouts">
+			<tbody>
+				<tr class="workout">
+					<td class="status"></td>
+					<td class="label"><input type="text"></td>
+					<td class="col col-dec"><button type="button" class="decrement">-</button></td>
+					<td class="col col-inc"><button type="button" class="increment">+</button></td>
+					<td class="col col-rem"><button type="button" class="remove">X</button></td>
+				</tr>
+				<tr class="add-workout">
+					<td colspan="4">
+						<button type="button">Add</button>
+					</td>
+				</tr>
+			</table>
+		</table>
+		
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+	<script>
+(function ($, undefined) {
+	$(function () {
+		var $workouts = $(".workouts");
+		var $add_workout = $(".add-workout button");
+		
+		var save = function () {
+			var items = [];
+			$workouts.find(".workout").each(function () {
+				var $row = $(this);
+				items.push({
+					status: $row.find(".status").text(),
+					label: $row.find("input").val()
+				});
+			});
+			console.log("workout items = ", items);
+			
+			var items_str = JSON.stringify(items);
+			console.log("items_str = ", items_str);
+			
+			window.localStorage.setItem("workouts", items_str);
+		};
+		
+		$workouts.on("change", "input", function () {
+			save();
+		});
+		
+		$workouts.on("click", ".remove", function () {
+			var $row = $(this).closest("tr");
+			var label = $row.find("input").val() || "[empty row]";
+			
+			if (confirm("Remove " + label + "?")) {
+				$row.remove();
+				
+				save();
+			}
+			
+			return false;
+		});
+		
+		$workouts.on("click", ".decrement", function () {
+			console.log("decrement");
+			
+			var $row = $(this).closest("tr");
+			var $status = $row.find(".status");
+			var current_text = $status.text();
+			
+			// Shorten status by 1 character
+			$status.text(current_text.substr(0, Math.max(0, current_text.length - 1)));
+			
+			save();
+			
+			return false;
+		});
+		
+		$workouts.on("click", ".increment", function () {
+			console.log("increment");
+			
+			var $row = $(this).closest("tr");
+			var $status = $row.find(".status");
+			var current_text = $status.text();
+			
+			$status.text(current_text + "+");
+			
+			save();
+			
+			return false;
+		});
+		
+		$add_workout.click(function () {
+			var $row = $(this).closest("tr");
+			var $copy = $row.prev().clone();
+			
+			// Clear status
+			$copy.find(".status").text("");
+			
+			// Clear label
+			$copy.find("input").val("");
+			
+			// Put it before the "add" row
+			$row.before($copy);
+			
+			return false;
+		});
+		
+		// Init
+		(function () {
+			var saved_items = window.localStorage.getItem("workouts");
+			if (saved_items) {
+				console.log("saved_items = ", saved_items);
+				
+				var saved_items_array = JSON.parse(saved_items);
+				
+				var $first_workout_row = $workouts.find(".workout").first();
+				var $add_row = $workouts.find(".add-workout");
+				
+				saved_items_array.forEach(function (item) {
+					var $copy = $first_workout_row.clone();
+					$copy.find(".status").text(item.status);
+					$copy.find("input").val(item.label);
+					
+					// Put before add workout row
+					$add_row.before($copy);
+				});
+				
+				// Remove first row; it was just there to clone
+				$first_workout_row.remove();
+			}
+		})();
+	});
+})(jQuery);
+	</script>
+	</body>
+</html>
